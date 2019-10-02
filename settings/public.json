@@ -1,0 +1,11 @@
+{
+  "telegram_bot_name": "...",
+  "telegram_chat_id_list": [
+  ],
+  "telegram_root_users": [
+      "@pavelmstu",
+      "@drewxa",
+      "@rusdev"
+  ],
+  "version": "2019.10.02"
+}
