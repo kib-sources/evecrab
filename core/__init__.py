@@ -12,7 +12,7 @@ import datetime
 # __author__ = 'pavelmstu'
 # __maintainer__ = 'pavelmstu'
 # __credits__ = ['pavelmstu', ]
-__copyright__ = "KIB"
+__copyright__ = "КИБ"
 __status__ = 'Development'
 __version__ = '20191002'
 
