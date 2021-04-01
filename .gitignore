@@ -1,6 +1,9 @@
 # Настройки
 settings/private.json
 
+# Сессия пользователя
+*.session
+
 #Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

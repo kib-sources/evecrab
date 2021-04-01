@@ -5,11 +5,16 @@
 
 ## Запуск
 
-1. Cкопируйте **settings/private.example.json** в  **settings/private.json**
-1. Заполните **telegram_bot_key** в  **settings/private.json**
+1. Cкопируйте **settings/private.example.json** в **settings/private.json**
+1. Заполните поля в  **settings/private.json**:
+    - **api_id** - ваш id в telegram
+    - **api_hash** - ваш хеш в telegram
+    - **username** - ваш username в telegram
+    - **bot_token** - токен вашего бота
+    - **chat_to_send_id** - id чата, куда вы отправляете новость
+    - **chat_to_send_polls_results_id** - id чата, куда вы отправляете результаты голосований
 1. Вы должны создать чат и добавить туда чат-бота
-1. В файлке config прописывается ID чата для чат-бота
-1. Бот публикует различную информацию о событиях
+1. Бот публикует различную информацию о событиях в чат **chat_to_send_id**
 
 Важно: из точности и полноты приоритет отдаётся полноте.
 Разумно сделать приватный чат и уже руками создавать нужные новости для своего канала.

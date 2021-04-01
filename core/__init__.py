@@ -7,6 +7,7 @@ created by pavel in pavel as 10/2/19
 Проект evecrab
 """
 import os
+import json
 import datetime
 
 # __author__ = 'pavelmstu'
@@ -16,8 +17,14 @@ __copyright__ = "КИБ"
 __status__ = 'Development'
 __version__ = '20191002'
 
-# Путь к проекту
+# Путь к проекту (evecrab)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Относительный путь к данным из public.json
+PUBLIC_SETTINGS_PATH = '/settings/public.json'
+
+# Относительный путь к данным из private.json
+PRIVATE_SETTINGS_PATH = '/settings/private.json'
 
 
 class Message:
@@ -25,11 +32,10 @@ class Message:
     Сообщение, содержащее информацию о событии
     """
 
-    def __init__(self, url, short_description, long_description=None, datetime_ = None):
+    def __init__(self, url, description, datetime_=None):
 
         self.url = url
-        self.short_description = short_description
-        self.long_description = long_description
+        self.description = description
         if datetime_:
             self.datetime_ = datetime_
         else:
@@ -37,8 +43,7 @@ class Message:
 
         assert isinstance(self.datetime_, datetime.datetime)
         assert isinstance(self.url, str)
-        assert isinstance(self.short_description, str)
-        assert isinstance(self.long_description, str) or self.long_description is None
+        # assert isinstance(self.description, str)
 
 
 def get_settings():
@@ -49,11 +54,27 @@ def get_settings():
     """
     if not os.path.exists(os.path.join(BASE_DIR, 'settings', 'public.json')):
         raise EnvironmentError(
-            "Нет файла ~/settings/private.json! Создайте его, скопировав Нет файла ~/settings/private.example.json"
+            "Нет файла ~/settings/private.json! Создайте его, скопировав ~/settings/private.example.json"
         )
-
     settings = dict()
-    # TODO ~/settings/private.json
-    # TODO ~/settings/public.json
-    raise NotImplementedError("Функция core.get_settings не написана!")
+
+    # Считываем данные из ~/settings/public.json
+    with open(BASE_DIR + PUBLIC_SETTINGS_PATH, "r") as read_json_file:
+        public_settings = json.load(read_json_file)
+
+    # Считываем данные из ~/settings/private.json
+    with open(BASE_DIR + PRIVATE_SETTINGS_PATH, "r") as read_json_file:
+        private_settings = json.load(read_json_file)
+
+    # Необходимые ключи из public.json
+    keys_from_public = ['telegram_chat_id_list']
+
+    # Необходимые ключи из private.json
+    keys_from_private = ['api_id', 'api_hash', 'username', 'bot_token',
+                         'chat_to_send_events_id', 'chat_to_send_polls_results_id']
+
+    # Добавление необходимых настроек в словарь
+    settings.update({key: private_settings[key] for key in keys_from_private})
+    settings.update({key: public_settings[key] for key in keys_from_public})
+
     return settings

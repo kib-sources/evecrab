@@ -1,3 +1,8 @@
 {
-  "telegram_bot_key": "..."
+  "api_id": "...",
+  "api_hash": "...",
+  "username": "...",
+  "bot_token": "...",
+  "chat_to_send_id": "...",
+  "chat_to_send_polls_results_id": "..."
 }

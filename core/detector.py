@@ -1,11 +1,13 @@
 """
-core.detector базовый модуль ЭС, обнаруживающие полезную информацию в тексте
+core.detector базовый модуль ЭС, обнаруживающая полезную информацию в тексте
 
 created by pavel in pavel as 10/2/19
 Проект evecrab
 """
 import numpy as np
 import datetime
+import subprocess
+from pymystem3 import Mystem
 
 # __author__ = 'pavel'
 # __maintainer__ = 'pavel'
@@ -16,7 +18,7 @@ __version__ = '20191002'
 
 
 def split_text(text):
-    text = text.replace('\n', ' ').replace('\t', ' ')
+    text = text.replace('\n', ' ').replace('\t', ' ').lower()
 
     while '  ' in text:
         text = text.replace('  ', ' ')
@@ -60,21 +62,64 @@ class KeyWordDummyISDetector(BaseDetector):
     Только после KeyWordISDummyDetector запускаются другие детекторы.
     """
 
-    LIST_DETECT = [
+    # Словарь слов про ИБ
+    LIST_DETECT_IS = [
         "иб",
-        "информационаая безопасность",
-        "information security",
-        # TODO дописать слова
+        "информационный",
+        "безопасность",
+        "information",
+        "security",
+        "кибербезопасность",
+        "ибспециалист",
+        "уязвимость",
+        "хакер",
+        "проникновение"
+    ]
+
+    # Словарь слов про события
+    LIST_DETECT_EVENT = [
+        "интенсив",
+        "курс",
+        "кейс",
+        "стажировка",
+        "митап",
+        "конференция",
+        "собеседование",
+        "практика",
+        "собрание",
+        "обучение",
+        "видеоконференция"
+
     ]
 
     def _one_predict(self, text):
 
-        # TODO прогнать text через https://yandex.ru/dev/mystem/
-        # text = ...
+        # Флаги, определяющие, содержит ли данный текст информацию про ИБ и какое-либо событие
+        is_IS = False
+        is_event = False
+
+        # Инициализация лемматизатора
+        lemmatizer = Mystem(grammar_info=False, entire_input=False)
+
+        # пребор всех слов
         for word in split_text(text):
-            if word.lower() in self.LIST_DETECT:
-                return 1.0
-        return 0.0
+
+            # Приведение слова к начальной форме
+            norm_word = lemmatizer.lemmatize(word)
+            if norm_word:
+                norm_word = norm_word[0]
+            else:
+                continue
+
+            # Есть ли данное слово в словаре слов про ИБ
+            if norm_word in self.LIST_DETECT_IS:
+                is_IS = True
+
+            # Есть ли данное слово в словаре слов про события
+            if norm_word in self.LIST_DETECT_EVENT:
+                is_event = True
+
+        return int(is_IS and is_event)
 
 
 class ISDetector(BaseDetector):
