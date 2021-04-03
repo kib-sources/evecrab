@@ -10,7 +10,7 @@ from core import get_settings
 import csv
 
 from core.crawlers import BaseTelegramCrawler, UploadTelegramCrawler
-from core.detector import KeyWordDummyISDetector
+from core.detector import AlgorithmicFilter
 
 __author__ = 'pavelmstu'
 __maintainer__ = 'pavelmstu'
@@ -53,15 +53,13 @@ def one_cycle():
     crawler = BaseTelegramCrawler('', '')
     for chanel in CHANNELS_LIST:
         for message in crawler(chanel):
-            # Инициализация детектора
-            detector = KeyWordDummyISDetector()
-            # Передача текста детектору
-            detector.append(message.description)
+            # Инициализация детектора и передача текста детектору
+            detector = AlgorithmicFilter(message)
             # Определение текста на начиличие заданных тем
-            is_IS_event = detector.predict()
+            is_IS_event = detector.detect_event(True) and detector.detect_is(True)
             if is_IS_event:
                 # Отправка сообщения в заданный чат
-                crawler.send_message_to_chat(CHAT_TO_SEND, message)
+                crawler.send_message_to_chat(CHAT_TO_SEND, detector.message)
 
 
 def channels_to_csv():

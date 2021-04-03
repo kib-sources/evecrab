@@ -5,9 +5,9 @@ created by pavel in pavel as 10/2/19
 Проект evecrab
 """
 import numpy as np
-import datetime
-import subprocess
+import re
 from pymystem3 import Mystem
+import core
 
 # __author__ = 'pavel'
 # __maintainer__ = 'pavel'
@@ -17,113 +17,100 @@ __status__ = 'Development'
 __version__ = '20191002'
 
 
-def split_text(text):
+def convert_text(text):
+    """
+    Функция, преобразующая текст
+    """
+    regex_pattern = re.compile(pattern="["
+                                        u"\U0001F600-\U0001F64F"  # emoticons
+                                        u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+                                        u"\U0001F680-\U0001F6FF"  # transport & map symbols
+                                        u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
+                                        "]+", flags=re.UNICODE)
+    text = regex_pattern.sub(r'',text.replace('✔️', ''))
     text = text.replace('\n', ' ').replace('\t', ' ').lower()
+    text = re.sub(r'\[(.+)\]\(\S+\)', r'\g<1> link', text)
+    text = re.sub(r'https?:\/\/(www\.)?([a-zA-Z0-9\.]){1,256}(\/[\-\w\d]+){0,20}(\.[\w]{1,20})?(\?[\w\d=]+)?',
+                  'link', text)
+    return text
 
-    while '  ' in text:
-        text = text.replace('  ', ' ')
-    return text.split(' ')
 
-
-class BaseDetector:
+class BaseFilter:
     """
-    Базовый детектор текстов
-    """
-
-    def __init__(self):
-        self._text_list = list()
-
-    def append(self, text):
-        self._text_list.append(text)
-
-    @property
-    def text_list(self):
-        return self._text_list[:]
-
-    def _one_predict(self, text):
-        return NotImplemented
-
-    def predict(self):
-        """
-        Функция, возвращающая априорную вероятность от 0.0 до 1.0
-        о том, что в тексте существует объявление о полезной информации
-        :return:
-        """
-        if not self._text_list:
-            return 0.0
-
-        p_list = [self._one_predict(text) for text in self._text_list]
-        return np.max(p_list)
-
-
-class KeyWordDummyISDetector(BaseDetector):
-    """
-    Простой детектор, который используется для проверки элементарных гипотез
-    Только после KeyWordISDummyDetector запускаются другие детекторы.
+    Базовый фильтр текстов
     """
 
-    # Словарь слов про ИБ
-    LIST_DETECT_IS = [
-        "иб",
-        "информационный",
-        "безопасность",
-        "information",
-        "security",
-        "кибербезопасность",
-        "ибспециалист",
-        "уязвимость",
-        "хакер",
-        "проникновение"
-    ]
+    def __init__(self, message):
+        self.message = message
 
-    # Словарь слов про события
-    LIST_DETECT_EVENT = [
-        "интенсив",
-        "курс",
-        "кейс",
-        "стажировка",
-        "митап",
-        "конференция",
-        "собеседование",
-        "практика",
-        "собрание",
-        "обучение",
-        "видеоконференция"
+    def detect_is(self):
+        ...
 
-    ]
+    def detect_event(self):
+        ...
 
-    def _one_predict(self, text):
 
-        # Флаги, определяющие, содержит ли данный текст информацию про ИБ и какое-либо событие
+class AlgorithmicFilter(BaseFilter):
+    """
+    Фильтр, детектирующий тексты на основе жесткого алгоритма
+    """
+
+    def __init__(self, message):
+        super().__init__(message)
+
+        # Словарь слов про ИБ
+        self.DETECT_IS_SET = core.get_is_set()
+
+        # Словарь слов про события
+        self.DETECT_EVENT_SET = core.get_events_set()
+
+    def detect_is(self, add_detected_word=False):
+
+        # Флаг, определяющий, содержит ли данный текст информацию про ИБ
         is_IS = False
-        is_event = False
+
+        # Слово, по которому сработал алгоритм
+        detected_word = ''
 
         # Инициализация лемматизатора
         lemmatizer = Mystem(grammar_info=False, entire_input=False)
 
-        # пребор всех слов
-        for word in split_text(text):
-
-            # Приведение слова к начальной форме
-            norm_word = lemmatizer.lemmatize(word)
-            if norm_word:
-                norm_word = norm_word[0]
-            else:
-                continue
+        # Перебор всех слов
+        for norm_word in lemmatizer.lemmatize(convert_text(self.message.description)):
 
             # Есть ли данное слово в словаре слов про ИБ
-            if norm_word in self.LIST_DETECT_IS:
+            if norm_word in self.DETECT_IS_SET:
                 is_IS = True
+                detected_word = norm_word
+                break
 
-            # Есть ли данное слово в словаре слов про события
-            if norm_word in self.LIST_DETECT_EVENT:
+        if add_detected_word:
+            self.message.description = '#' + detected_word + '\n' + self.message.description
+
+        return is_IS
+
+    def detect_event(self, add_detected_word=False):
+        # Флаг, определяющий, содержит ли данный текст информацию про событие
+        is_event = False
+
+        # Слово, по которому сработал алгоритм
+        detected_word = ''
+
+        # Инициализация лемматизатора
+        lemmatizer = Mystem(grammar_info=False, entire_input=False)
+
+        # Перебор всех слов
+        for norm_word in lemmatizer.lemmatize(convert_text(self.message.description)):
+
+            # Есть ли данное слово в словаре слов про ИБ
+            if norm_word in self.DETECT_EVENT_SET:
                 is_event = True
+                detected_word = norm_word
+                break
 
-        return int(is_IS and is_event)
+        if add_detected_word:
+            self.message.description = '#' + detected_word + '\n' + self.message.description
+
+        return is_event
 
 
-class ISDetector(BaseDetector):
-    """
-    'Нормальный' детектор
-    """
-    # TODO

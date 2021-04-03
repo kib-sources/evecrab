@@ -7,8 +7,8 @@ created by pavel in pavel as 10/2/19
 Проект evecrab
 """
 import os
-import json
 import datetime
+import json
 
 # __author__ = 'pavelmstu'
 # __maintainer__ = 'pavelmstu'
@@ -26,12 +26,17 @@ PUBLIC_SETTINGS_PATH = '/settings/public.json'
 # Относительный путь к данным из private.json
 PRIVATE_SETTINGS_PATH = '/settings/private.json'
 
+# Относительный путь к ИБ-словарю is_words.json
+IS_DICT_PATH = 'dictionaries/is_words.json'
+
+# Относительный путь к Event-словарю events_words.json
+EVENTS_DICT_PATH = 'dictionaries/events_words.json'
+
 
 class Message:
     """
     Сообщение, содержащее информацию о событии
     """
-
     def __init__(self, url, description, datetime_=None):
 
         self.url = url
@@ -78,3 +83,24 @@ def get_settings():
     settings.update({key: public_settings[key] for key in keys_from_public})
 
     return settings
+
+
+def get_is_set():
+    """
+    Функция, возвращая множество слов по ИБ
+    :return:
+    """
+    with open(IS_DICT_PATH) as json_file:
+        data = json.load(json_file)
+        return set(data['IS'])
+
+
+def get_events_set():
+    """
+    Функция, возвращая множество слов по событиям
+    :return:
+    """
+    with open(EVENTS_DICT_PATH) as json_file:
+        data = json.load(json_file)
+        return set(data['Events'])
+
