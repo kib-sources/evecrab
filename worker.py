@@ -1,58 +1,27 @@
 """
 worker -- запускаемый воркер
-
-created by pavel in pavel as 10/2/19
-Проект evecrab
 """
 from time import sleep
 import datetime
 from core import get_settings
-import csv
-
 from core.crawlers import BaseTelegramCrawler, UploadTelegramCrawler
 from core.detector import AlgorithmicFilter
-
-__author__ = 'pavelmstu'
-__maintainer__ = 'pavelmstu'
-__credits__ = ['pavelmstu', ]
-__copyright__ = "КИБ"
-__status__ = 'Development'
-__version__ = '20191002'
 
 
 CYCLE_SLEEP_TIME = 60
 
-
 # Список каналов
-CHANNELS_LIST = [
-    'https://t.me/TG_security',
-    'https://t.me/haccking',
-    'https://t.me/webware',
-    'https://t.me/exploitex',
-    'https://t.me/hackerlib',
-    'https://t.me/SecLabNews',
-    'https://t.me/alexmakus',
-    'https://t.me/anti_malware',
-    'https://t.me/certkznews',
-    'https://t.me/plastikcash',
-    'https://t.me/thehaking',
-    'https://t.me/sterkin_ru',
-    'https://t.me/it_ha',
-    'https://t.me/Russian_OSINT',
-    'https://t.me/overlamer1',
-    'https://t.me/bugfeature',
-    'https://t.me/deeptoweb',
-    'https://t.me/HNews'
-]
+CHANNELS_LIST = get_settings()['telegram_chat_links_list']
 
 # Чат, в который мы будем отправлять сообщение
-CHAT_TO_SEND = get_settings()['chat_to_send_events_id']
+CHAT_TO_SEND = get_settings()['chat_id_to_send_events']
 
 
 def one_cycle():
-    crawler = BaseTelegramCrawler('', '')
+    crawler = BaseTelegramCrawler()
     for chanel in CHANNELS_LIST:
-        for message in crawler(chanel):
+        crawler.set_base_url(chanel)
+        for message in crawler.get_messages():
             # Инициализация детектора и передача текста детектору
             detector = AlgorithmicFilter(message)
             # Определение текста на начиличие заданных тем

@@ -1,5 +1,9 @@
 import logging
-from core import get_settings
+from core import get_settings, Message
+from telethon import TelegramClient
+from core.detector import AlgorithmicFilter
+import asyncio
+
 
 from telegram import (
     ParseMode,
@@ -25,8 +29,10 @@ logger = logging.getLogger(__name__)
 def start(update: Update, context: CallbackContext) -> None:
     """Информирование пользователя о функционале бота"""
     update.message.reply_text(
-        'Пожалуйста, выберите /poll, чтобы получить опрос или /preview, чтобы' +
-        ' создать предварительный просмотр для вашего опроса'
+        """
+        Данный бот предназначет для отправки новостей с функцией
+        голосования и вывода результатов
+        """
     )
 
 
@@ -68,7 +74,8 @@ def receive_poll_answer(update: Update, context: CallbackContext) -> None:
 def results(update: Update, context: CallbackContext) -> None:
     """Получение результата опросов"""
     poll_ids = list(context.bot_data.keys())
-    CHAT_ID = '-532329858'
+    chat_id = get_settings()['chat_id_to_send_polls_results']
+
     for poll_id in poll_ids:
         text = context.bot_data[poll_id]['text']
         result = ''
@@ -77,7 +84,7 @@ def results(update: Update, context: CallbackContext) -> None:
         for k, v in context.bot_data[poll_id]['options'].items():
             result += '\t• ' + k + ' - ' + str(v) + '\n\n'
         context.bot.send_message(
-            CHAT_ID,
+            chat_id,
             result,
             parse_mode=ParseMode.HTML,
         )
@@ -98,18 +105,93 @@ def preview(update: Update, context: CallbackContext) -> None:
 
 def help_handler(update: Update, context: CallbackContext) -> None:
     """Показывает подсказку"""
-    update.message.reply_text("Используй, /poll или /preview для тестирования бота.")
+
+    update.message.reply_text("""
+        - Выберите /startcrawler для отправки новостей с опросами
+    - Выберите /stopcrawler для принудительной остановки краулера
+    - Выберите /results для отправки результатов опросов
+    """)
 
 
-def main() -> None:
+async def start_crawler(update: Update, context: CallbackContext) -> None:
+    # Список каналов
+    channel_list = get_settings()['telegram_chat_links_list']
+
+    # Чат, в который мы будем отправлять сообщение
+    # CHAT_ID = get_settings()['chat_to_send_events_id']
+    chat_id = get_settings()['chat_id_to_send_polls']
+
+    # Получаем необходимые настройки
+    settings = get_settings()
+
+    questions = [u'\U0001f44d', u'\U0001f44e']
+
+    async with TelegramClient(settings['username'], settings['api_id'], settings['api_hash']) as client:
+
+        for chanel in channel_list[:1]:
+
+            async for message in client.iter_messages(chanel, limit=10):
+
+                message = Message(chanel, message.text, datetime_=message.date)
+                # Инициализация детектора и передача текста детектору
+                detector = AlgorithmicFilter(message)
+                # Определение текста на начиличие заданных тем
+                is_IS_event = detector.detect_event(True) and detector.detect_is(True)
+
+                if is_IS_event:
+
+                    context.bot.send_message(
+                        chat_id,
+                        detector.message.description,
+                        parse_mode=ParseMode.HTML,
+                    )
+
+                    message_to_send = context.bot.send_poll(
+                        # update.effective_chat.id,
+                        chat_id,
+                        'Как тебе новость?',
+                        questions,
+                        is_anonymous=False,
+                        allows_multiple_answers=False,
+                    )
+
+                    # Сохранение информации об опросе для последующего использования
+                    payload = {
+                        message_to_send.poll.id: {
+                            "options": {question: 0 for question in questions},
+                            "questions": questions,
+                            "message_id": message_to_send.message_id,
+                            "chat_id": update.effective_chat.id,
+                            "all_answers": 0,
+                            "text": detector.message.description + '\n#ID: ' + str(message_to_send.message_id)
+                        }
+                    }
+
+                    context.bot_data.update(payload)
+
+
+loop = asyncio.new_event_loop()
+
+
+def start_crawler_run(update: Update, context: CallbackContext):
+    loop.run_until_complete(start_crawler(update, context))
+
+
+def stop_crawler(update: Update, context: CallbackContext):
+    loop.close()
+
+
+def main():
     # Создаем экземпляр Updater и передаем токен бота.
     updater = Updater(get_settings()['bot_token'])
     dispatcher = updater.dispatcher
     dispatcher.add_handler(CommandHandler('start', start))
-    dispatcher.add_handler(CommandHandler('poll', poll))
+    # dispatcher.add_handler(CommandHandler('poll', poll))
     dispatcher.add_handler(CommandHandler('results', results))
+    dispatcher.add_handler(CommandHandler('startcrawler', start_crawler_run))
+    dispatcher.add_handler(CommandHandler('stopcrawler', stop_crawler))
     dispatcher.add_handler(PollAnswerHandler(receive_poll_answer))
-    dispatcher.add_handler(CommandHandler('preview', preview))
+    # dispatcher.add_handler(CommandHandler('preview', preview))
     dispatcher.add_handler(CommandHandler('help', help_handler))
 
     # Старт бота

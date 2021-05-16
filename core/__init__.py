@@ -1,23 +1,12 @@
 """
 core/.__init__.py
-
 Ядро системы.
-
-created by pavel in pavel as 10/2/19
-Проект evecrab
 """
 import os
 import datetime
 import json
 
-# __author__ = 'pavelmstu'
-# __maintainer__ = 'pavelmstu'
-# __credits__ = ['pavelmstu', ]
-__copyright__ = "КИБ"
-__status__ = 'Development'
-__version__ = '20191002'
-
-# Путь к проекту (evecrab)
+# Путь к проекту
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Относительный путь к данным из public.json
@@ -54,7 +43,7 @@ class Message:
 def get_settings():
     """
     Функция, возвращающая словарь settings,
-        выбирая данные из ~/settings/private.json и ~/settings/public.json
+    выбирая данные из ~/settings/private.json и ~/settings/public.json
     :return:
     """
     if not os.path.exists(os.path.join(BASE_DIR, 'settings', 'public.json')):
@@ -72,11 +61,12 @@ def get_settings():
         private_settings = json.load(read_json_file)
 
     # Необходимые ключи из public.json
-    keys_from_public = ['telegram_chat_id_list']
+    keys_from_public = ['telegram_chat_links_list']
 
     # Необходимые ключи из private.json
     keys_from_private = ['api_id', 'api_hash', 'username', 'bot_token',
-                         'chat_to_send_events_id', 'chat_to_send_polls_results_id']
+                         'chat_id_to_send_events', 'chat_id_to_send_polls_results',
+                         'chat_id_to_send_polls']
 
     # Добавление необходимых настроек в словарь
     settings.update({key: private_settings[key] for key in keys_from_private})

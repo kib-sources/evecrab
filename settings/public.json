@@ -1,10 +1,22 @@
 {
-  "telegram_chat_id_list": [
-  ],
-  "telegram_root_users": [
-      "@pavelmstu",
-      "@drewxa",
-      "@rusdev"
-  ],
-  "version": "2019.10.02"
+  "telegram_chat_links_list": [
+    "https://t.me/TG_security",
+    "https://t.me/haccking",
+    "https://t.me/webware",
+    "https://t.me/exploitex",
+    "https://t.me/hackerlib",
+    "https://t.me/SecLabNews",
+    "https://t.me/alexmakus",
+    "https://t.me/anti_malware",
+    "https://t.me/certkznews",
+    "https://t.me/plastikcash",
+    "https://t.me/thehaking",
+    "https://t.me/sterkin_ru",
+    "https://t.me/it_ha",
+    "https://t.me/Russian_OSINT",
+    "https://t.me/overlamer1",
+    "https://t.me/bugfeature",
+    "https://t.me/deeptoweb",
+    "https://t.me/HNew"
+  ]
 }
